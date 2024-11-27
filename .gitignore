@@ -28,3 +28,4 @@ deploy.sh
 output/*
 content/*
 
+node_modules/*

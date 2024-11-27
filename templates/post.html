@@ -6,22 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>{{.DateStr}} - {{.Title}}</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              bright_background: "#EBECEC",
-              dark_background: "#29332F",
-              primary: "#3DCC98",
-              primary_dim: "#2C926C",
-              text_dark: "#33403B",
-            },
-          },
-        },
-      };
-    </script>
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,7 +15,7 @@
       rel="stylesheet"
     />
 
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./mini-style.css" />
     <link rel="icon" href="./favicon.ico" type="image/x-icon" />
   </head>
   <body>
@@ -77,8 +62,7 @@
       >
         <h1 class="text-5xl text-primary mb-1">{{.Title}}</h1>
         <h3 class="text-xl text-primary_dim mb-4">{{.DateStr}}</h3>
-
-        <p class="text-dark_background">{{.Content}}</p>
+        <div class="post text-dark_background" id="post">{{.HTML}}</div>
       </div>
     </div>
   </body>

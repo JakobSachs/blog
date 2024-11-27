@@ -1,3 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 :root {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -18,4 +23,29 @@ body {
 #name-display {
   font-family: "Red Hat Display", sans-serif;
   font-optical-sizing: auto;
+}
+
+
+#post h1 {
+  @apply text-4xl font-bold text-gray-900; /* Apply Tailwind classes to all h1 inside .post */
+}
+
+#post h2 {
+  @apply text-2xl font-semibold text-gray-700; /* Apply Tailwind classes to all h2 inside .post */
+}
+
+#post p {
+  @apply text-base leading-relaxed text-gray-600; /* Apply Tailwind classes to all p inside .post */
+}
+
+#post img {
+  @apply rounded-lg shadow-lg my-6; /* Apply Tailwind classes to all img inside .post */
+}
+
+#post pre {
+  @apply bg-gray-100 rounded-lg p-4; /* Apply Tailwind classes to all pre inside .post */
+}
+
+#post code {
+  @apply text-sm; /* Apply Tailwind classes to all code inside .post */
 }

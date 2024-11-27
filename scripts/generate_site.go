@@ -1,6 +1,8 @@
 package main
 
 import (
+	bf "github.com/russross/blackfriday/v2"
+
 	"bufio"
 	"errors"
 	"fmt"
@@ -42,6 +44,48 @@ func GetPostFiles(contentDir string) ([]string, error) {
 }
 
 // Parses out a Post struct from the given markdown file
+// func PostFromFile(path string) (Post, error) {
+// 	var post Post
+// 	// read in file line-by-line
+// 	fs, err := os.Open(path)
+// 	if err != nil {
+// 		return post, err
+// 	}
+// 	defer fs.Close()
+
+// 	var lines []string
+// 	scanner := bufio.NewScanner(fs)
+// 	for scanner.Scan() {
+// 		lines = append(lines, scanner.Text())
+// 	}
+// 	if err := scanner.Err(); err != nil {
+// 		return post, err
+// 	}
+// 	if len(lines) < 2 {
+// 		return post, errors.New("file has too few lines! Cant have a shorter then 2 lines post")
+// 	}
+
+// 	// parse out the lines
+// 	titleLine := lines[0]
+// 	sections := strings.Split(titleLine, "-")
+
+// 	if len(sections) != 3 {
+// 		return post, errors.New("first line has malformed header info, needs to be ")
+// 	}
+
+// 	post.Date, err = time.Parse("01.02.2006", strings.TrimSpace(sections[0][1:])) // [1:] to remove the leading '#'
+// 	if err != nil {                                                               // cant parse date
+// 		return post, err
+// 	}
+// 	post.DateStr = post.Date.Format("01.02.2006")
+// 	post.Type = strings.TrimSpace(sections[1])
+// 	post.Title = strings.TrimSpace(sections[2])
+// 	post.Content = strings.Join(lines[1:], "") // simply just join rest of content for now
+
+// 	return post, nil
+// }
+
+// Parses out a Post struct from the given markdown file
 func PostFromFile(path string) (Post, error) {
 	var post Post
 	// read in file line-by-line
@@ -71,14 +115,19 @@ func PostFromFile(path string) (Post, error) {
 		return post, errors.New("first line has malformed header info, needs to be ")
 	}
 
-	post.Date, err = time.Parse("01.02.2006", strings.TrimSpace(sections[0][1:])) // [1:] to remove the leading '#'
+	post.Date, err = time.Parse("02.01.2006", strings.TrimSpace(sections[0][1:])) // [1:] to remove the leading '#'
 	if err != nil {                                                               // cant parse date
 		return post, err
 	}
-	post.DateStr = post.Date.Format("01.02.2006")
+	post.DateStr = post.Date.Format("02.01.2006")
 	post.Type = strings.TrimSpace(sections[1])
 	post.Title = strings.TrimSpace(sections[2])
-	post.Content = strings.Join(lines[1:], "\n") // simply just join rest of content for now
+
+	// join the markdown content, starting after the title
+	post.Content = strings.Join(lines[1:], "\n")
+
+	// convert markdown to HTML using Blackfriday
+	post.HTML = template.HTML(bf.Run([]byte(post.Content)))
 
 	return post, nil
 }
