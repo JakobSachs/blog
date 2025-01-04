@@ -1,0 +1,62 @@
++++
+title = "Trying to max-out a naive NBODY CUDA kernel and playing around with the new SM-2-SM net"
+date = 2024-11-27
++++
+
+# Intro
+
+- in my masters, last semester i did a GPU programming & architecture course
+- for that we had the option to take on some bonus work, to explore the capabilities of the newly introduced SM-2-SM/distributed shared memory features that came with the new Hopper architecture
+- since i have some background in physics, and i also wanted something that is nicely visually verifiable, i chose a NBODY simulation
+- since im also lazy and wanted to focus on rather kernel optimization, then overall "quality" i didn't want to engage with any of those 'fancy' algorithms like Barnes-Hut or Fast-Multipole-Method
+- instead i just went for it and decided to do a real cruel O(n^2) approach of hard-calculating all of the pairs, and even then there some glaring issues with my algorithm, but such is life
+- To understand the code, we'll just do a _real_ quick look at how/why this works.
+- (sum of all forces equal's total force, and then show how wea can iterate the positions through time via Euler)
+- I also aimed to just do the most simple direct euler method for updating the positions/velocities
+
+## First Version
+
+```cpp
+__inline__ __device__ void compute_forces_between_bodies(const double cur_x,const double cur_y, const double x, const double y, const double cur_m, const double m, double* forces) {
+  const double r_x = x - cur_x; 
+  const double r_y = y - cur_y;
+
+  const double r_2 = r_x * r_x + r_y * r_y;
+
+  // add a softening factor to avoid division by 0.0
+  const double softening = 1e-9;
+  const double r_2_softened = r_2 + softening;
+
+  const double temp =
+      G * cur_m * m / (sqrt(r_2_softened) * r_2_softened);
+
+  forces[0] += temp * r_x;
+  forces[1] += temp * r_y;
+
+
+// first simple iteration
+__global__ void kernel(const double *x, const double *y, const double* masses, double *forces,
+                       const unsigned long int N) {
+
+  unsigned long int start = threadIdx.x + blockIdx.x * blockDim.x;
+
+  if (start >= N) return;
+  
+  for (unsigned long int idx = start; idx < N; idx += blockDim.x * gridDim.x) {
+    // really simply just loop for-now
+    const double cur_x = x[idx];
+    const double cur_y = y[idx];
+    double cur_f[2];
+    for (unsigned long int i = 0; i < N; i++) {
+      if (i != idx)
+        compute_forces_between_bodies(cur_x, cur_y, x[i], y[i], masses[idx], masses[i], &cur_f[0]);
+    }
+  }
+}
+
+```
+
+(_We decouple the actual force computation code, since later on we'll have to reuse the same piece of code multiple times in the same kernel._)
+
+
+

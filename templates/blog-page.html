@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="mb-10 bg-bright_background border-dark_background border p-9 flex flex-row items-center justify-between">
-<h1 class="title text-3xl">
+<div >
+<h1>
   {{ page.title }}
 </h1>
 <spankclass="subtitle"><strong>{{ page.date }}</strong></span>
 </div>
 
-<div class="bg-bright_background border-dark_background border p-3">
+<div>
 {{ page.content | safe }}
 </div>
 {% endblock content %}

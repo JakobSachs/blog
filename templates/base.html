@@ -7,60 +7,25 @@
 
     <title>{% block title %}{% endblock title %}</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
-      rel="stylesheet"
-    />
 
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/style.css" />
-    <script>
-    tailwind.config = {
-      
-  theme: {
-    extend: {
-      colors: {
-        bright_background: "#EBECEC",
-        dark_background: "#29332F",
-        primary: "#3DCC98",
-        primary_dim: "#2C926C",
-        text_dark: "#33403B",
-      },
-    },
-  },
-    }
-    </script>
   </head>
   <body>
-    <div class="container mx-auto w-11/12">
-      <!-- nav bar -->
-      <div class="h-12 w-full mb-5 mt-10">
-        <div class="flex justify-between my-4">
-          <nav
-            class="flex flex-row justify-between w-8/12 items-stretch bg-bright_background text-lg border-dark_background border text-center tracking-wide"
-          >
+    <div>
+      <nav>
             <a
               href="/"
-              class="hover:underline w-1/6 py-2 text-primary bg-dark_background"
               >home</a
             >
-            <a href="/about" class="hover:underline w-1/6 py-2">about</a>
-            <a class="hover:underline w-1/6 py-2">index</a>
-            <a class="hover:underline w-1/6 py-2">articles</a>
-            <a class="hover:underline w-1/6 py-2">things</a>
+            <a href="/about" >about</a>
           </nav>
-        </div>
       </div>
 
 
-      <section class="section">
-        <div class="container">
+      <section lass="section">
           {% block content %}{% endblock content %}
-        </div>
       </section>
 
 
