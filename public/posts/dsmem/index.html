@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en-us"><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <meta name="description" content="tl;dr
+
+
+how to share local memory across thread-blocks on the new Hopper architecture
+
+
+possibly big deal for performance (no-more going to global for inter-thread-block comms.)
+
+
+a super-basic demo on how to get started with it
+
+
+Intro
+I noticed there is very little information or easy examples for using the sm-to-sm communication network on the Hopper Architecture (Compute Capability 9.0/sm_90),
+so I thought I would try to quickly give a super simple example.">  
+
+  <title>
+    
+      How to use distributed shared memory in CUDA for inter-thread-block communication
+    
+  </title>
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/" />
+  
+  
+  
+  <link rel="stylesheet" href="/css/main.5a9ec16bd5a18572ff3b3a27cf1e01000a4c7bf880d3aafbfa52f4597e753ead91fd383ca50f83a20b5975ee90e61532d2faae267e6aee86491dcb17485af1e7.css" integrity="sha512-Wp7Ba9WhhXL/Ozonzx4BAApMe/iA06r7&#43;lL0WX51Pq2R/Tg8pQ&#43;DogtZde6Q5hUy0vquJn5q7oZJHcsXSFrx5w==" />
+  
+  <link rel="stylesheet" href="/syntax.css"/>
+</head>
+<body a="auto">
+        <main class="page-content" aria-label="Content">
+            <div class="w">
+                <div class="post-meta">
+                    <a href="/">--&gt;</a>
+
+                    <p>
+                        <time datetime="2025-01-04 00:00:00 &#43;0000 UTC">
+                            2025-01-04
+                        </time>
+                    </p>
+                </div>
+
+<article>
+    <h1>How to use distributed shared memory in CUDA for inter-thread-block communication</h1>
+
+    
+
+    <h1 id="tldr">tl;dr</h1>
+<ul>
+<li>
+<p>how to share local memory across thread-blocks on the new Hopper architecture</p>
+</li>
+<li>
+<p>possibly big deal for performance (no-more going to global for inter-thread-block comms.)</p>
+</li>
+<li>
+<p>a super-basic demo on how to get started with it</p>
+</li>
+</ul>
+<h1 id="intro">Intro</h1>
+<p>I noticed there is very little information or easy examples for using the sm-to-sm communication network on the Hopper Architecture (Compute Capability 9.0/<code>sm_90</code>),
+so I thought I would try to quickly give a super simple example.</p>
+<p>I&rsquo;ve also been working on a more extended writeup on using the distributed shared memory features for a
+NBODY-simulation kernel, but this will have to wait till I&rsquo;m done with my exams 😿.</p>
+<p>Also, this is my first attempt at a blog, so I&rsquo;m super grateful for any feedback.</p>
+<h2 id="what-is-distributed-shared-memory-">What is distributed shared memory ?</h2>
+<p>So what is distributed shared memory (DSMEM) and why do we want it? Most &ldquo;interesting&rdquo; GPU problems end up being very sensitive to memory characteristics (latency/bandwidth),
+so much so that in my GPU architecture course we ended up almost exclusively talking about the memory-model of CUDA and its hardware implementation.</p>
+<p>A real quick breakdown of it looks like this:</p>
+<ol>
+<li>
+<p>You have global memory which is usually what the number is you see for GPU-memory on the label. This ends up being DRAM since we want loads of it to store our results and data
+(just look at the sizes of those LLamas3.1 Models), but that also means we hit the &lsquo;memory wall&rsquo; and end up being bottlenecked fairly early by memory speeds.</p>
+</li>
+<li>
+<p>There&rsquo;s also constant/texture memory which I won&rsquo;t go much into here, but basically it&rsquo;s just global memory with its own cache (also DRAM).</p>
+</li>
+<li>
+<p>To make my point I&rsquo;m also skipping all the caches, and registers.</p>
+</li>
+<li>
+<p>Shared memory, which is essentially a programmer-controlled cache that resides on the silicon itself and consists of SRAM which ends up being a whole bunch faster (roughly 10-20x better latency and 2-3x bandwidth).
+To achieve the advertised FLOPS modern GPUs can put out, your code will certainly have to make use of this to recycle data accesses. One big caveat with this is though, that (so far) shared-memory
+is only accessible by threads in the same thread block. So while you can have up to 1024 threads work on the same chunk of shared memory, if you want to access it from outside that thread block,
+so far you would need to copy the content back into global memory. One can easily see how this might really hurt us on performance since the whole reason we are using shared memory is because we want to
+avoid those time/energy costs of going to device/global memory.</p>
+</li>
+</ol>
+<p>So what the fine people at NVIDIA did with their Hopper Architecture is add a new address-space to the memory-model, which let&rsquo;s us access a different&rsquo;s thread-block memory without going to main memory.
+This is implemented via some inter-streaming-multiprocessor communication-net the details of which seem to still be obscured, but that also doesn&rsquo;t matter too much for us. It is to note though that with the current
+architecture CUDA only supports this for thread-blocks that are in the same thread-block-cluster (clusters are limited to a total size of 16 blocks).</p>
+<h2 id="how-do-we-actually-use-the-new-feature-">How do we actually use the new feature ?</h2>
+<p>So first of all, as mentioned you won&rsquo;t be able to use this feature if you&rsquo;re not running on a Compute-Capability 9.0 (or higher if you&rsquo;re reading post-Blackwell release) CUDA-Card (i.e H100/H200),
+this also means that we need to compile our CUDA kernel to be specific to the architecture (we can do this by passing <code>-arch=sm_90</code>) since otherwise NVCC will compile our kernel into a binary for a bunch of
+different target architectures (which is called a fat-binary internally).</p>
+<p>Then our next condition is to launch our kernel via the extended kernel-launch interface <code>cudaLaunchKernelEx(...)</code> (see <a href="https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__HIGHLEVEL.html#group__CUDART__HIGHLEVEL_1g98d60efe48c3400a1c17a1edb698e530">here</a>),
+not the standard triple angle-brackets. This is nothing complicated, just way more verbose. Crucially we have to specify the thread-block-cluster size to make sure we are running our kernel in a thread-block-cluster mode.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// our config object
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">cudaLaunchConfig_t</span> <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+</span></span><span class="line"><span class="cl"><span class="c1">// .. (other arguments like grid-size)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// new attribute 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">cudaLaunchAttribute</span> <span class="n">attribute</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="c1">// only one attribute in this case
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">attribute</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">id</span> <span class="o">=</span> <span class="n">cudaLaunchAttributeClusterDimension</span><span class="p">;</span> <span class="c1">// specify attribute type
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">attribute</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">val</span><span class="p">.</span><span class="n">clusterDim</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">cluster_size</span><span class="p">;</span> <span class="c1">// our cluster size (up to 16)
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// add our attribute to the config
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">config</span><span class="p">.</span><span class="n">numAttrs</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">config</span><span class="p">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">attribute</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">cudaLaunchKernelEx</span><span class="p">(</span><span class="o">&amp;</span><span class="n">config</span><span class="p">,</span> <span class="n">kernel</span><span class="p">);</span> <span class="c1">// launch our kernel with the config
+</span></span></span></code></pre></div><p>Now finally we can get to the feature, accessing another thread-blocks local/shared memory.
+For this we need a handle for the cluster we (the current thread/warp/thread-block) are inside which we get by calling <code>cooperative_groups::this_cluster()</code> (don&rsquo;t forget to <code>#include &lt;cooperative_groups.h&gt;</code>).
+Then using this <code>cluster.map_shared_rank()</code> ( <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cluster-group-cg">see here for documentation</a>) we can get a pointer to a shared-memory variable that we want from the remote thread-block:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// some variable in shared-memory
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">extern</span> <span class="n">__shared__</span> <span class="kt">int</span> <span class="n">A</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">auto</span> <span class="n">cluster</span> <span class="o">=</span> <span class="n">cooperative_groups</span><span class="o">::</span><span class="n">this_cluster</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// get address of A variable of second thread-block in the cluster
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">int</span><span class="o">*</span> <span class="n">remote_A</span> <span class="o">=</span> <span class="n">cluster</span><span class="p">.</span><span class="n">map_shared_rank</span><span class="p">(</span><span class="o">&amp;</span><span class="n">A</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="n">remote_A</span> <span class="o">+=</span> <span class="mh">0xBEEF</span><span class="p">;</span> <span class="c1">// modify remote memory
+</span></span></span></code></pre></div><p>This ends up doing exactly what we want, but let&rsquo;s convince ourselves it actually does what we want with &hellip;</p>
+<h2 id="a-hello-world-level-dsmem-program">A &lsquo;hello world&rsquo; level DSMEM program</h2>
+<p>So to demonstrate this actually works, I tried to come up with a super simple example kernel, which is purely contrived to see that the feature works:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__global__</span> <span class="kt">void</span> <span class="nf">sm2smTest</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="c1">// handle object to the current thread-block-cluster
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">cooperative_groups</span><span class="o">::</span><span class="n">cluster_group</span> <span class="n">cluster</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">      <span class="n">cooperative_groups</span><span class="o">::</span><span class="n">this_cluster</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// declare and initalize our shared memory
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="k">extern</span> <span class="n">__shared__</span> <span class="kt">int</span> <span class="n">smem</span><span class="p">[];</span>
+</span></span><span class="line"><span class="cl">  <span class="n">smem</span><span class="p">[</span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// cluster-wide barrier to ensure all the shared-memory is initalized
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">cluster</span><span class="p">.</span><span class="n">sync</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// aquire address of the &#39;smem&#39; variable of the next thread-block (wrap in )
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">int</span> <span class="o">*</span><span class="n">dst_smem</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">      <span class="n">cluster</span><span class="p">.</span><span class="n">map_shared_rank</span><span class="p">(</span><span class="n">smem</span><span class="p">,</span> <span class="p">(</span><span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">cluster</span><span class="p">.</span><span class="n">dim_blocks</span><span class="p">().</span><span class="n">x</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// write from our local thread-block to the remote block&#39;s memory
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">dst_smem</span><span class="p">[</span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// another barrier to ensure all remote thread-blocks are done writing to our
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="c1">// smem
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">cluster</span><span class="p">.</span><span class="n">sync</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// inital value in smem should&#39;ve been incremented by neighbour thread-block
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="c1">// so smem[threadIdx.x] = (threadIdx.x * blockIdx.x) + 1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;thread-idx: %d</span><span class="se">\t</span><span class="s">block-idx: %d</span><span class="se">\t</span><span class="s">smem: %d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="n">smem</span><span class="p">[</span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>(<em>Note:</em> Dont forget to call <code>cluster.sync()</code> at the appropriate spots to ensure our operations are all synchronized correctly).</p>
+<p>When launched via the <code>cudaLaunchKernelEx</code> with 4 blocks and one single cluster we get something like:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">thread-idx: 0	block-idx: 0	smem: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">thread-idx: 1	block-idx: 0	smem: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">thread-idx: 2	block-idx: 0	smem: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">thread-idx: 0	block-idx: 1	smem: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">thread-idx: 1	block-idx: 1	smem: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">thread-idx: 2	block-idx: 1	smem: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">... 
+</span></span><span class="line"><span class="cl">thread-idx: 0	block-idx: 2	smem: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">thread-idx: 1	block-idx: 2	smem: <span class="m">3</span>
+</span></span><span class="line"><span class="cl">thread-idx: 2	block-idx: 2	smem: <span class="m">5</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">thread-idx: 0	block-idx: 3	smem: <span class="m">1</span>
+</span></span><span class="line"><span class="cl">thread-idx: 1	block-idx: 3	smem: <span class="m">4</span>
+</span></span><span class="line"><span class="cl">thread-idx: 2	block-idx: 3	smem: <span class="m">7</span>
+</span></span><span class="line"><span class="cl">thread-idx: 3	block-idx: 3	smem: <span class="m">10</span>
+</span></span><span class="line"><span class="cl">...
+</span></span></code></pre></div><p>Yes, this is a trivial example, but we can see that the <code>dst_smem[threadIdx.x] += 1</code> is actually happening and being executed successfully 🎉.</p>
+<p>The next step is coming up with algorithms that can exploit this new feature properly, which isn&rsquo;t necessarily trivial. In my experience, the extra synchronization that&rsquo;s needed often makes up any
+of the performance gained from using DSMEM, so this feature is probably best foir when synchronization had to happen anyway.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>This was ment to be only a super short and easy intro to using this new feature, for more information you can look at the documentation i linked above or read the more verbose <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/#distributed-shared-memory">offical-guide</a>.
+If you have any questions/corrections feel free to reach out to me on <a href="https://bsky.app/profile/jakobs99.bsky.social">Bluesky</a>, or leave a comment on the hackernews thread.</p>
+
+</article>
+
+            </div>
+        </main>
+    </body></html>

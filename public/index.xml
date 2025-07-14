@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Jakob Sachs Personal Blog</title>
+    <link>https://jakobsachs.blog/</link>
+    <description>Recent content on Jakob Sachs Personal Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 14 Jul 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://jakobsachs.blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Running an old AMD Datacenter card at home</title>
+      <link>https://jakobsachs.blog/posts/mi50/</link>
+      <pubDate>Mon, 14 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>https://jakobsachs.blog/posts/mi50/</guid>
+      <description>&lt;p&gt;And why &lt;em&gt;you&lt;/em&gt; likely shouldn&amp;rsquo;t&lt;/p&gt;&#xA;&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;&#xA;&lt;p&gt;I&amp;rsquo;ve been craving more parallel compute power in my home recently, and have been looking around for&#xA;a long time on something that can fit my student budget/work with my present hardware. Specifically&#xA;i had a old motherboard and 8th-gen Intel CPU laying around that i wanted to make use of. A few&#xA;alternatives i considered:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&#xA;&lt;p&gt;The boring standard answer of buying a used RTX 3090 which seems to be still the best tradeoff on&#xA;price/power/flops/memory for most people. But buying a 600€ card for a 100€ platform felt like a&#xA;bit of an overkill, especially since my windows PC that i use for mostly gaming is only running a&#xA;old GTX 1660.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>How to use distributed shared memory in CUDA for inter-thread-block communication</title>
+      <link>https://jakobsachs.blog/posts/dsmem/</link>
+      <pubDate>Sat, 04 Jan 2025 00:00:00 +0000</pubDate>
+      <guid>https://jakobsachs.blog/posts/dsmem/</guid>
+      <description>&lt;h1 id=&#34;tldr&#34;&gt;tl;dr&lt;/h1&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&#xA;&lt;p&gt;how to share local memory across thread-blocks on the new Hopper architecture&lt;/p&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;&#xA;&lt;p&gt;possibly big deal for performance (no-more going to global for inter-thread-block comms.)&lt;/p&gt;&#xA;&lt;/li&gt;&#xA;&lt;li&gt;&#xA;&lt;p&gt;a super-basic demo on how to get started with it&lt;/p&gt;&#xA;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h1 id=&#34;intro&#34;&gt;Intro&lt;/h1&gt;&#xA;&lt;p&gt;I noticed there is very little information or easy examples for using the sm-to-sm communication network on the Hopper Architecture (Compute Capability 9.0/&lt;code&gt;sm_90&lt;/code&gt;),&#xA;so I thought I would try to quickly give a super simple example.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en-us"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <meta name="description" content="tl;dr
+
+
+for simple dense-layers (all that we&rsquo;ll be covering here) we can conceptualize backpropagation on
+3 different layers (element, vector, matrix)
+
+
+with batches we add another level to the problem, but this is uninteresting since its just averaging
+
+
+almost all of the formulas can be derived from &lsquo;common sense&rsquo; and some sort of dimensional analysis
+
+
+Disclaimer
+Im everything but an expert in machine learning, nor am i particulary excellent at math (atleast compared
+to some people). So this post is kind of a story of how i understand/stood backpropagation from a less
+dry/direct vector calculus viewpoint and rather a kind of naive intuitive approach.">  
+
+  <title>
+    
+      Understanding backpropagation on 3 (&#43; 1) different levels by dimensional analysis
+    
+  </title>
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/" />
+  
+  
+  
+  <link rel="stylesheet" href="/css/main.413c91fa72d212802d97088f3208ad4c4456dbb1ea4e2bb7b091af9a49e828a254aed0f59499d6217b615e55b60181dbd7deb61d050a495fc903d6a532d51029.css" integrity="sha512-QTyR&#43;nLSEoAtlwiPMgitTERW27HqTiu3sJGvmknoKKJUrtD1lJnWIXthXlW2AYHb1962HQUKSV/JA9alMtUQKQ==" />
+  
+  <link rel="stylesheet" href="/syntax.css"/>
+</head>
+<body a="auto">
+        <main class="page-content" aria-label="Content">
+            <div class="w">
+                <div class="post-meta">
+                    <a href="/">--&gt;</a>
+
+                    <p>
+                        <time datetime="2025-02-05 00:00:00 &#43;0000 UTC">
+                            2025-02-05
+                        </time>
+                    </p>
+                </div>
+
+<article>
+    <h1>Understanding backpropagation on 3 (&#43; 1) different levels by dimensional analysis</h1>
+
+    
+
+    <h1 id="tldr">tl;dr</h1>
+<ul>
+<li>
+<p>for simple dense-layers (all that we&rsquo;ll be covering here) we can conceptualize backpropagation on
+3 different layers (element, vector, matrix)</p>
+</li>
+<li>
+<p>with batches we add another level to the problem, but this is uninteresting since its just averaging</p>
+</li>
+<li>
+<p>almost all of the formulas can be derived from &lsquo;common sense&rsquo; and some sort of dimensional analysis</p>
+</li>
+</ul>
+<h1 id="disclaimer">Disclaimer</h1>
+<p>Im everything but an expert in machine learning, nor am i particulary excellent at math (atleast compared
+to some people). So this post is kind of a story of how i understand/stood backpropagation from a less
+dry/direct vector calculus viewpoint and rather a kind of naive intuitive approach.</p>
+<p>Im mostly writing this because when i started getting into this topic i had a really hard time understanding
+the matrix-formulation of the backpropagation/chain-rules, so im writing this for kind of &ldquo;past-me&rdquo;
+in the hope someone else finds it usefull.</p>
+<h1 id="background">Background</h1>
+<p>Nowadays neural networks are everywhere (in your phone, in your car, maybe even in your walls) and since
+finding the parameters by hand seems like an awefull waste of time, we want to automate this.
+The historically best established way for doing this is SGD (Stochastic Gradient Descent), and for that we
+need (as indicated in the name) the gradient of our networks &lsquo;goodness&rsquo; function, for the current set of parameters.</p>
+<p>The &lsquo;goodness&rsquo; usually called either loss or error is the function we are trying to minimize, and SGD
+gets us there by just tweaking the parameters after every step depending on the computed gradient.
+What the exact loss function is in our case relevant, but if it helps you can choose to imagine it
+as the Error, Mean-Squared-Error or whatever you&rsquo;re  comfortable with. In the end the only thing that counts
+is that we want to minimze this scalar (single value) variable ever more.</p>
+<p>So what exactly is the gradient ? It&rsquo;s one of the higher-dimension variations of the standard high-school
+derivative you likely now. If you take your mind back to high-school or whenever you had your first bit
+of calculus, you might remember a teacher telling drawing some line-graph and pointing at it and explaining how the slope
+is the derivative. While i would say the derivative is alot more then just the slope of the graph, for understanding
+the gradient it can</p>
+
+</article>
+
+            </div>
+        </main>
+    </body></html>
