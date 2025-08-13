@@ -1,0 +1,19 @@
+{% extends "templates/base.html" %}
+
+{% block content %}
+<h1>Jakob Sachs Personal Blog</h1>
+
+<p>
+Hi and welcome to my blog 👐.
+</br>
+Here i hope to post semi-regular short articles about programming &amp; computers.
+</p>
+<h2>Recent Posts</h2>
+<ul>
+  {% for post in posts %}
+  <li>
+    <a href="{{ post.file }}">{{ post.date }} - {{ post.title }}</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -28,7 +28,9 @@ alternatives i considered:
   some good power-efficiency from what i hear. But 1k€ is just too much for me currently, so this
   sadly has to wait (unless someone has a Grayskull card laying around that they want to get rid of).
 
+
 ---
+
 
 So instead of choosing any of these sane, well-prove solutions, i decided to buy myself some problems.
 Years ago i noticed that old NVIDIA Tesla HPC cards (V100 etc.) are going for quite cheap on eBay, and i got
@@ -39,7 +41,7 @@ So i looked on eBay and found a seller right here in Germany selling Refurbed Mi
 around mightnight (best time for decisions obviously) decided to order, alongside an improved PSU since the card is sometimes
 reported to have a power-limit of 300 watts. 3 days later and i received a beautiful, outdated, and shiny new toy:
 
-{{< figure src="card.jpeg" alt="Image of the card" width="70%" >}}
+![Image of the card](card.jpeg)
 
 Some interesting things to note about these cards:
 
@@ -56,7 +58,8 @@ I've had this card for close to a week now and had quite a few hurdles to cross 
 - As mentioned i had to buy a PSU that supported the 300Watt via 2 8-pin PCI cables, but that wouldve likely been a given with any of the alternatives
 - The card is built for a blowthrough-style server chasis, so i had to MacGyver myself a fan shroud/duct on the end of it
 
-{{< figure src="installed.jpeg" alt="Image of the system with the pink 3D-printed fan-duct" width="70%" >}}
+![Image of the system with the pink 3D-printed fan-duct](installed.jpeg)
+
 I still haven't  fully load tested the card, so im unsure if this arrangment will be enough to cool it. But sofar its holding the GPU at <45 celsius.
 
 I thought with this i might have halve of the work done, but it turned out the hardware side was alot more straightforward to solve, compared to the 

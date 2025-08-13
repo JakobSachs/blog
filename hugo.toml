@@ -1,7 +1,0 @@
-baseURL = 'https://jakobsachs.blog/'
-languageCode = 'en-us'
-title = 'Jakob Sachs Personal Blog'
-theme = 'nostyleplease'
-markup.highlight.noClasses=false
-
-
